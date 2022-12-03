@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet id="2022-11-15-001-moto" author="hizik">
+
+        <preConditions>
+
+            <not>
+                <tableExists tableName="moto"/>
+            </not>
+
+        </preConditions>
+
+        <createTable tableName="moto">
+
+            <column name="id"
+                    type="bigint"
+                    autoIncrement="true">
+                <constraints nullable="false" primaryKey="true" deleteCascade="true"/>
+            </column>
+
+            <column name="lat"
+                    type="float">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="lon"
+                    type="float">
+                <constraints nullable="false"/>
+            </column>
+
+        </createTable>
+
+    </changeSet>
+
+</databaseChangeLog>

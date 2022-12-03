@@ -1,0 +1,18 @@
+server:
+  port: 2023
+spring:
+  liquibase:
+    enabled: true
+    change-log: classpath:db.changelog/spring.db.changelog-master.xml
+  jpa:
+    generate-ddl: false
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/mototrack2
+    username: postgres
+    password: postgres
