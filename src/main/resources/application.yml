@@ -1,5 +1,5 @@
 server:
-  port: 2023
+  port: 2022
 spring:
   liquibase:
     enabled: true

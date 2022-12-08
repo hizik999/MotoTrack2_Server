@@ -1,0 +1,9 @@
+com\hizik\App.class
+com\hizik\domain\Moto$MotoBuilder.class
+com\hizik\service\MotoServiceImpl.class
+com\hizik\rest\controller\MotoController.class
+com\hizik\rest\dto\MotoDto$MotoDtoBuilder.class
+com\hizik\repository\MotoRepository.class
+com\hizik\service\MotoService.class
+com\hizik\domain\Moto.class
+com\hizik\rest\dto\MotoDto.class
