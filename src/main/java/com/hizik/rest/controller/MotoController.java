@@ -1,67 +1,142 @@
 package com.hizik.rest.controller;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hizik.domain.Moto;
 import com.hizik.rest.dto.MotoDto;
 import com.hizik.service.MotoService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 @RestController
-@RequiredArgsConstructor
+@RequestMapping("/moto")
+@Validated
 public class MotoController {
 
+    private static final Logger log = LoggerFactory.getLogger(MotoController.class);
+
     private final MotoService motoService;
-    private static final Logger log = Logger.getLogger(MotoController.class.getName());
+    private final ObjectMapper objectMapper;
 
-    @GetMapping("/moto")
+    public MotoController(MotoService motoService, ObjectMapper objectMapper) {
+        this.motoService = motoService;
+        this.objectMapper = objectMapper;
+    }
+
+    @GetMapping
     public List<MotoDto> getAllMoto() {
-        List<MotoDto> list = motoService.getAll().stream().map(MotoDto::toDto).collect(Collectors.toList());
-        log.info(log.getName() + " getAllMoto(): " + Arrays.toString(list.toArray()));
-        return list;
+        List<MotoDto> motoList = motoService.getAll()
+                .stream()
+                .map(MotoDto::toDto)
+                .toList();
+        log.info("Loaded {} moto points", motoList.size());
+        return motoList;
 
     }
 
-    @PostMapping(path = "/moto")
-    public MotoDto insertMoto(MotoDto motoDto){
+    @PostMapping
+    public MotoDto insertMoto(@RequestParam(required = false) Long id,
+                              @RequestParam(required = false) Float lat,
+                              @RequestParam(required = false) Float lon,
+                              @RequestBody(required = false) String body) {
+        MotoDto motoDto = resolveMotoDto(id, lat, lon, body);
         Moto moto = motoService.insert(MotoDto.toDomainObject(motoDto));
-        log.info(log.getName() + " insertMoto(): " + moto.toString());
+        log.info("Inserted moto point with id {}", moto.getId());
         return MotoDto.toDto(moto);
     }
 
-    @PutMapping("/moto/{id}")
-    public MotoDto updateMoto(@PathVariable String id, @RequestParam String lat, @RequestParam String lon){
-
-        // костыль
-        long id1 = Long.parseLong(id);
-        float lat1 = Float.parseFloat(lat);
-        float lon1 = Float.parseFloat(lon);
-
-        Moto moto = motoService.updateMoto(id1, lat1, lon1);
-        log.info(log.getName() + " updateMoto(): " + moto.toString());
+    @PutMapping("/{id}")
+    public MotoDto updateMoto(@PathVariable Long id,
+                              @RequestParam(required = false) Float lat,
+                              @RequestParam(required = false) Float lon,
+                              @RequestBody(required = false) String body) {
+        MotoDto motoDto = resolveMotoDto(id, lat, lon, body);
+        Moto moto = motoService.updateMoto(id, motoDto.lat(), motoDto.lon());
+        log.info("Updated moto point with id {}", moto.getId());
         return MotoDto.toDto(moto);
     }
 
-    @GetMapping("/moto/{id}")
-    public MotoDto getMotoById(@PathVariable long id){
+    @GetMapping("/{id}")
+    public MotoDto getMotoById(@PathVariable Long id) {
         Moto moto = motoService.getById(id);
-        log.info(log.getName() + " getMotoById(): " + moto.toString());
+        log.info("Loaded moto point with id {}", moto.getId());
         return MotoDto.toDto(moto);
     }
 
-    @DeleteMapping("/moto/{id}")
-    public void deleteMotoDyId(@PathVariable String id){
+    @DeleteMapping("/{id}")
+    public void deleteMotoById(@PathVariable Long id) {
+        motoService.deleteMoto(id);
+        log.info("Deleted moto point with id {}", id);
+    }
 
-        //костыль
-        long id1 = Long.parseLong(id);
+    private MotoDto resolveMotoDto(Long id, Float lat, Float lon, String body) {
+        if (lat != null && lon != null) {
+            return new MotoDto(id, lat, lon);
+        }
 
-        motoService.deleteMoto(id1);
-        log.info(log.getName() + " deleteMotoById(): " + ": " + id);
+        if (body == null || body.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "lat and lon are required");
+        }
 
+        try {
+            JsonNode jsonNode = objectMapper.readTree(body);
+            Long resolvedId = firstLong(jsonNode, id, "id");
+            Float resolvedLat = firstFloat(jsonNode, lat, "lat", "latitude");
+            Float resolvedLon = firstFloat(jsonNode, lon, "lon", "lng", "longitude");
+
+            if (resolvedLat == null || resolvedLon == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "lat and lon are required");
+            }
+
+            return new MotoDto(resolvedId, resolvedLat, resolvedLon);
+        } catch (JsonProcessingException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body must be valid JSON", exception);
+        }
+    }
+
+    private static Long firstLong(JsonNode jsonNode, Long fallback, String... fieldNames) {
+        if (fallback != null) {
+            return fallback;
+        }
+
+        for (String fieldName : fieldNames) {
+            JsonNode field = jsonNode.get(fieldName);
+            if (field != null && field.canConvertToLong()) {
+                return field.asLong();
+            }
+        }
+
+        return null;
+    }
+
+    private static Float firstFloat(JsonNode jsonNode, Float fallback, String... fieldNames) {
+        if (fallback != null) {
+            return fallback;
+        }
+
+        for (String fieldName : fieldNames) {
+            JsonNode field = jsonNode.get(fieldName);
+            if (field != null && field.isNumber()) {
+                return (float) field.asDouble();
+            }
+        }
+
+        return null;
     }
 }

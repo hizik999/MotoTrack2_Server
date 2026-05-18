@@ -8,13 +8,13 @@ public interface MotoService {
 
     Moto insert(Moto moto);
 
-    void deleteMoto(long id);
+    void deleteMoto(Long id);
 
     List<Moto> getAll();
 
-    Moto getById(long id);
+    Moto getById(Long id);
 
-    Moto updateMoto(long id,
-                    float lat,
-                    float lon);
+    Moto updateMoto(Long id,
+                    Float lat,
+                    Float lon);
 }

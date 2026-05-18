@@ -1,18 +1,39 @@
 server:
-  port: 2022
+  port: ${SERVER_PORT:2022}
+
 spring:
+  application:
+    name: mototrack2-server
   liquibase:
     enabled: true
     change-log: classpath:db.changelog/spring.db.changelog-master.xml
+  datasource:
+    driver-class-name: ${DB_DRIVER:org.h2.Driver}
+    url: ${DB_URL:jdbc:h2:mem:mototrack2;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
+  h2:
+    console:
+      enabled: true
   jpa:
     generate-ddl: false
-    database: postgresql
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: none
+    open-in-view: false
     show-sql: false
+---
+spring:
+  config:
+    activate:
+      on-profile: postgres
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/mototrack2
-    username: postgres
-    password: postgres
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/mototrack2}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+  h2:
+    console:
+      enabled: false
+  jpa:
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect

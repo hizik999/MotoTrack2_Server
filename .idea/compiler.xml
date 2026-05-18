@@ -8,11 +8,13 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="mototrack_server_v2" />
+        <module name="mototrack2-server" />
       </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="mototrack2-server" options="-parameters" />
       <module name="mototrack_server_v2" options="-parameters" />
     </option>
   </component>
